@@ -1,0 +1,557 @@
+;;; Project 1, 6.001, Spring 2005
+
+;;; idea is to simulate a baseball robot
+
+;;; Author: Felipo Soranz
+;;; Date: 14-16/May/2011
+;;; Time (aprox):
+;;;   Problem 1: 6 minutes
+;;;   Problem 2: 31 minutes
+;;;   Problem 3: 12 minutes
+;;;   Problem 4: 1 hour 13 minutes
+;;;   Problem 5: 31 minutes
+;;;   Problem 6: 30 minutes
+;;;   Problem 7: 1 hour 32 minutes
+;;;   Problem 8&9: 38 minutes
+;;;   Total: 5 hours 13 minutes
+;;;   Extra: Prettying the code + 30 minutes
+
+;; imagine hitting a ball with an initial velocity of v 
+;; at an angle alpha from the horizontal, at a height h
+;; we would like to know how far the ball travels.
+
+;; as a first step, we can just model this with simple physics
+;; so the equations of motion for the ball have a vertical and a 
+;; horizontal component
+
+;; the vertical component is governed by
+;; y(t) = v sin alpha t + h - 1/2 g t^2 
+;; where g is the gravitational constant of 9.8 m/s^2
+
+;; the horizontal component is governed by
+;; x(t) = v cos alpha t
+;; assuming it starts at the origin
+
+;; First, we want to know when the ball hits the ground
+;; this is governed by the quadratic equation, so we just need to know when 
+;; y(t)=0 (i.e. for what t_impact is y(t_impact)= 0).
+;; note that there are two solutions, only one makes sense physically
+
+(define square
+  (lambda (x) (* x x)))
+
+;; these are constants that will be useful to us
+(define gravity 9.8)  ;; in m/s
+(define pi 3.14159)
+
+;; Problem 1
+
+; u = initial position
+; v = velocity
+; a = acceleration
+; t = time
+; position = 0.5 * a * t^2 + v * t + u
+
+(define position
+  (lambda (a v u t)
+    (+ (* 0.5 a (square t)) (* v t) u)))
+
+;; you need to complete this procedure, then show some test cases
+
+;(position 0 0 0 0)
+;Value: 0
+;(position 0 0 20 0)
+;Value: 20
+;(position 0 5 10 10)
+;Value: 60
+;(position 2 2 2 2)
+;Value: 10.
+;(position 5 5 5 5)
+;Value: 92.5
+
+;; Problem 2
+
+; number,number,number,op -> number
+; also, solves simple equations (for a = 0 and b <> 0)
+(define (quadratic-root a b c op)
+  (let ((delta (- (square b) (* 4 a c))))
+    (cond ((< delta 0) #f)
+	  ((and (= a 0) (not (= b 0)))
+	   (/ (- c) b))
+	  (else (/ (op (- b) (sqrt delta))
+		   (* 2 a))))))
+
+(define root1
+  (lambda (a b c)
+    (quadratic-root a b c +)))
+
+(define root2
+  (lambda (a b c)
+    (quadratic-root a b c -)))
+
+;; complete these procedures and show some test cases
+
+; Case 1: different roots (delta > 0)
+;(root1 3 -7 2)
+;Value: 2
+;(root2 3 -7 2)
+;Value: 1/3
+
+; Case 2: equal roots (delta = 0)
+;(root1 -1 4 -4)
+;Value: 2
+;(root2 -1 4 -4)
+;Value: 2
+
+; Case 3: no real root (delta < 0)
+;(root1 5 -6 5)
+;Value: #f
+;(root2 5 -6 5)
+;Value: #f
+
+; Case 4: simple equation (a = 0)
+;(root1 0 0.5 -4)
+;Value: 8.
+;(root2 0 0.5 -4)
+;Value: 8.
+
+
+;; Problem 3
+
+; vertical-velocity in meters/second (+ = upwards, - = downwards)
+; elevation in meters
+; return time in seconds to hit the ground
+(define time-to-impact
+  (lambda (vertical-velocity elevation)
+    (root2 (- (/ gravity 2)) vertical-velocity elevation)))
+    ; Only positive roots make sense in this case...
+
+; thrown up
+; vertical-velocity = 6m/s upwards
+; elevation = 2 meters above ground
+;(time-to-impact 6 2)
+;Value: 1.4971217709664815
+
+; dropped from 1k
+;(time-to-impact 0 1000)
+;Value: 14.285714285714285
+
+; thrown down from 100 meters
+;(time-to-impact -10 100)
+;Value: 3.6109411093511086
+
+;; Note that if we want to know when the ball drops to a particular height r 
+;; (for receiver), we have
+
+(define time-to-height
+  (lambda (vertical-velocity elevation target-elevation)
+    (time-to-impact vertical-velocity (- elevation target-elevation))))
+
+; thrower and receiver at same height
+; throws slight up (0,9 m/s upwards)
+;(time-to-height 0.9 1.7 1.7)
+;Value: .18367346938775508
+
+; a plane drops a bomb from 3000 meters and hits target 200 meters above ground
+;(time-to-height 0 3000 200)
+;Value: 23.904572186687872
+
+;; Problem 4
+
+;; once we can solve for t_impact, we can use it to figure out how far the ball went
+
+;; conversion procedure
+(define degree2radian
+  (lambda (deg)
+    (/ (*  deg pi) 180.)))
+
+(define vertical-velocity
+  (lambda (velocity angle)
+    (* velocity (sin (degree2radian angle)))))
+
+;(vertical-velocity 10 0)
+;Value: 0
+;(vertical-velocity 10 30)
+;Value: 4.999996169872557
+;(vertical-velocity 10 60)
+;Value: 8.660249615191342
+;(vertical-velocity 10 90)
+;Value: 9.999999999991198
+
+(define horizontal-velocity
+  (lambda (velocity angle)
+    (* velocity (cos (degree2radian angle)))))
+
+;(horizontal-velocity 10 0)
+;Value: 10
+;(horizontal-velocity 10 30)
+;Value: 8.660256249168368
+;(horizontal-velocity 10 60)
+;Value: 5.000007660251953
+;(horizontal-velocity 10 90)
+;Value: 1.3267948966775308e-5
+
+(define travel-distance-simple
+  (lambda (elevation velocity angle)
+    (let ((time (time-to-impact (vertical-velocity velocity angle) elevation)))
+      (position 0 (horizontal-velocity velocity angle) 0 time))))
+
+;; let's try this out for some example values.  Note that we are going to 
+;; do everything in metric units, but for quaint reasons it is easier to think
+;; about things in English units, so we will need some conversions.
+
+(define meters-to-feet
+  (lambda (m)
+    (/ (* m 39.6) 12)))
+
+(define feet-to-meters
+  (lambda (f)
+    (/ (* f 12) 39.6)))
+
+(define hours-to-seconds
+  (lambda (h)
+    (* h 3600)))
+
+(define seconds-to-hours
+  (lambda (s)
+    (/ s 3600)))
+
+;; what is time to impact for a ball hit at a height of 1 meter
+;; with a velocity of 45 m/s (which is about 100 miles/hour)
+
+;; at an angle of 0 (straight horizontal)
+
+;(travel-distance-simple 1 45 0)
+;Value: 20.32892781536815
+;(meters-to-feet (travel-distance-simple 1 45 0))
+;Value: 67.0854617907149
+
+;; at an angle of (/ pi 2) radians or 90 degrees (straight vertical)
+
+;(travel-distance-simple 1 45 45)
+;Value: 207.6278611514906
+;(meters-to-feet (travel-distance-simple 1 45 45))
+;Value: 685.171941799919
+
+;; at an angle of (/ pi 4) radians or 45 degrees
+
+;(travel-distance-simple 1 45 90)
+;Value: 5.49641898961246e-4
+;(meters-to-feet (travel-distance-simple 1 45 90))
+;Value: 1.8138182665721116e-3
+
+;; what is the distance traveled in each case?
+;; record both in meters and in feet
+
+
+;; Problem 5
+
+;; these sound pretty impressive, but we need to look at it more carefully
+
+;; first, though, suppose we want to find the angle that gives the best
+;; distance
+;; assume that angle is between 0 and (/ pi 2) radians or between 0 and 90
+;; degrees
+
+(define alpha-increment 0.01)
+
+(define find-best-angle
+  (lambda (velocity elevation)
+    (define (try-angle angle previous-distance)
+      (let ((distance (travel-distance-simple elevation velocity angle)))
+	;DEBUG
+	;(display "angle:" ) (display angle)
+        ;(display " distance:") (display distance)
+	;(newline)
+	;keep checking until distance starts to shrink or maximum angle reached
+	(if (or (<= distance previous-distance) (> angle 90))
+	    (- angle 1)      ;return previous angle
+	    (try-angle (+ 1 angle) distance))))
+    (try-angle 1 0.0)))
+
+;; find best angle
+;; try for other velocities
+;; try for other heights
+
+;(find-best-angle 45 1)  => 45
+;(find-best-angle 0.1 2) => 1
+;(find-best-angle 5 30)  => 11
+;(find-best-angle 10 30) => 21
+;(find-best-angle 0.0001 2) => 1
+
+
+;; Problem 6
+
+;; problem is that we are not accounting for drag on the ball (or on spin 
+;; or other effects, but let's just stick with drag)
+;;
+;; Newton's equations basically say that ma = F, and here F is really two 
+;; forces.  One is the effect of gravity, which is captured by mg.  The
+;; second is due to drag, so we really have
+;;
+;; a = drag/m + gravity
+;;
+;; drag is captured by 1/2 C rho A vel^2, where
+;; C is the drag coefficient (which is about 0.5 for baseball sized spheres)
+;; rho is the density of air (which is about 1.25 kg/m^3 at sea level 
+;; with moderate humidity, but is about 1.06 in Denver)
+;; A is the surface area of the cross section of object, which is pi D^2/4 
+;; where D is the diameter of the ball (which is about 0.074m for a baseball)
+;; thus drag varies by the square of the velocity, with a scaling factor 
+;; that can be computed
+
+;; We would like to again compute distance , but taking into account 
+;; drag.
+;; Basically we can rework the equations to get four coupled linear 
+;; differential equations
+;; let u be the x component of velocity, and v be the y component of velocity
+;; let x and y denote the two components of position (we are ignoring the 
+;; third dimension and are assuming no spin so that a ball travels in a plane)
+;; the equations are
+;;
+;; dx/dt = u
+;; dy/dt = v
+;; du/dt = -(drag_x/m + g_x)
+;; dv/dt = -(drag_y/m + g_y)
+;; we have g_x = - and g_y = - gravity
+;; to get the components of the drag force, we need some trig.
+;; let speeed = (u^2+v^2)^(1/2), then
+;; drag_x = - drag * u /speed
+;; drag_y = - drag * v /speed
+;; where drag = beta speed^2
+;; and beta = 1/2 C rho pi D^2/4
+;; note that we are taking direction into account here
+
+;; we need the mass of a baseball -- which is about .15 kg.
+
+;; so now we just need to write a procedure that performs a simple integration
+;; of these equations -- there are more sophisticated methods but a simple one 
+;; is just to step along by some step size in t and add up the values
+
+;; dx = u dt
+;; dy = v dt
+;; du = - 1/m speed beta u dt
+;; dv = - (1/m speed beta v + g) dt
+
+;; initial conditions
+;; u_0 = V cos alpha
+;; v_0 = V sin alpha
+;; y_0 = h
+;; x_0 = 0
+
+;; we want to start with these initial conditions, then take a step of size dt
+;; (which could be say 0.1) and compute new values for each of these parameters
+;; when y reaches the desired point (<= 0) we stop, and return the distance (x)
+
+(define drag-coeff 0.5)
+(define density 1.25)  ; kg/m^3
+(define mass .145)  ; kg
+(define diameter 0.074)  ; m
+(define beta (* .5 drag-coeff density (* 3.14159 .25 (square diameter))))
+
+(define (calculate-du u v dt g m beta)
+  (* (/ -1 m)
+     beta
+     (sqrt (+ (square u) (square v)))
+     u
+     dt))
+	     
+(define (calculate-dv u v dt g m beta)
+  (* (- (- (* (/ 1 m)
+	      (sqrt (+ (square u) (square v)))
+	      v
+	      beta))
+	g)
+     dt))
+
+(define integrate
+  (lambda (x0 y0 u0 v0 dt g m beta)
+    (define (integrate-iter x y u v)
+      ;DEBUG
+      ;(display x) (display " ") (display y) (display " ")
+      ;(display u) (display " ") (display v) (newline)
+      (if (< y 0)
+	  x
+	  (let ((dx (* u dt))
+		(dy (* v dt))
+		(du (calculate-du u v dt g m beta))
+		(dv (calculate-dv u v dt g m beta)))
+	    (integrate-iter (+ x dx) (+ y dy) (+ u du) (+ v dv)))))
+    (integrate-iter x0 y0 u0 v0)))
+
+
+(define travel-distance
+  (lambda (elevation velocity angle)
+    (integrate 0
+	       elevation
+	       (* velocity (cos (degree2radian angle)))
+	       (* velocity (sin (degree2radian angle)))
+	       0.01
+	       gravity
+	       mass
+	       beta)))
+
+
+;; RUN SOME TEST CASES
+
+;strong hit, good angle
+;(travel-distance 0 45 45) => 91.68807578657687
+
+;a little higher
+;(travel-distance 2 45 45) => 92.76720294690212
+
+;weaker hit, good angle
+;(travel-distance 1 30 45) => 58.13051609317143
+
+;strong hit, bad angle (too low)
+;(travel-distance 1 45 20) => 78.49037404327778
+
+;strong hit, bad angle (too high)
+;(travel-distance 1 45 60) => 76.20332801176566
+
+
+;; what about Denver?
+
+
+; ---- Density of Air for Denver ----
+;(define density 1.06)  ; kg/m^3 
+; Recalculate beta with density for denver
+;(define beta (* .5 drag-coeff density (* 3.14159 .25 (square diameter))))
+; Travel distance for Denver using same parameters
+;(travel-distance 0 45 45) => 99.34751137713185
+
+
+
+;; Problem 7
+ 
+;; now let's turn this around.  Suppose we want to throw the ball.  The same
+;; equations basically hold, except now we would like to know what angle to 
+;; use, given a velocity, in order to reach a given height (receiver) at a 
+;; given distance
+
+; return best angle to throw with given velocity to achieve desired distance
+; at minimum possible time
+(define (best-throw-angle velocity distance)
+  (define (try-angle angle)
+    ;DEBUG
+    ;(newline)
+    ;(display "angle: ") (display angle)
+    (if (> angle 90)
+	#f         ; can't reach distance in any angle
+	(let ((time (get-time-by-distance velocity distance angle)))
+	  (if (not (false? time))         ; can't reach distance
+	      angle                       ; found best angle
+	      (try-angle (+ angle 1)))))) ; not found, try next
+  (try-angle -90)) ; start pointing down and keep going up
+                   ; as a consequence, the first angle found will have the
+                   ; shortest arc to the target and consequently, the lowest time
+
+; If tolerance is too small, the resulting angle will be too steep,
+; unless checking for smaller increments of angles (would take longer)
+(define distance-tolerance 5) ; meters
+
+(define (get-time-by-distance velocity distance angle)
+  (integrate-distance
+   0
+   0
+   (* velocity (cos (degree2radian angle)))
+   (* velocity (sin (degree2radian angle)))
+   0.01
+   gravity
+   mass
+   beta
+   distance))
+
+(define integrate-distance
+  (lambda (x0 y0 u0 v0 dt g m beta desired-distance)
+    (define (integrate-iter x y u v time)
+      ;DISPLAY DEBUG INFO
+      ;(display x) (display " ") (display y) (display " ")
+      ;(display u) (display " ") (display v) (newline)
+      (if (< y 0)  ; reached ground
+	  (if (< (abs (- x desired-distance)) distance-tolerance) ; at desired distance?
+	      time    ;return time to reach distance
+	      #f)     ;return #f if angle can't reach distance
+	  (let ((dx (* u dt))
+		(dy (* v dt))
+		(du (calculate-du u v dt g m beta))
+		(dv (calculate-dv u v dt g m beta)))
+	    (integrate-iter (+ x dx) (+ y dy) (+ u du) (+ v dv) (+ time dt)))))
+    (integrate-iter x0 y0 u0 v0 0)))
+
+
+;; a cather trying to throw someone out at second has to get it roughly 36 m
+;; (or 120 ft) how quickly does the ball get there, if he throws at 55m/s,
+;;  at 45m/s, at 35m/s?
+
+; (best-throw-angle 45 36) => 6
+
+;; try out some times for distances (30, 60, 90 m) or (100, 200, 300 ft) 
+;; using 45m/s
+
+; (best-throw-angle 45 30) => 4
+; (best-throw-angle 45 60) => 12
+; (best-throw-angle 45 90) => 26
+; (best-throw-angle 40 90) => #f  (too weak, can't reach distance)
+
+;; Problem 8
+
+(define (get-distance-with-bounces elevation velocity angle bounces)
+  (integrate-distance-bouncing
+   0
+   elevation
+   (* velocity (cos (degree2radian angle)))
+   (* velocity (sin (degree2radian angle)))
+   0.01 ;TODO - REDUCE THIS!!!
+   gravity
+   mass
+   beta
+   bounces))
+
+(define integrate-distance-bouncing
+  (lambda (x0 y0 u0 v0 dt g m beta bounces)
+    (define (integrate-iter x y u v bounces)
+      ;DISPLAY DEBUG INFO
+      ;(display x) (display " ") (display y) (display " ")
+      ;(display u) (display " ") (display v) (newline)
+      (if (< y 0)              ;reached ground
+	  (if (= bounces 0)
+	      x                ;no more bounces, return distance
+	      (integrate-iter
+	       x 0 (/ u 2) (- (/ v 2)) (- bounces 1))) ;bounce (half velocity)
+	  (let ((dx (* u dt))
+		(dy (* v dt))
+		(du (calculate-du u v dt g m beta))
+		(dv (calculate-dv u v dt g m beta)))
+	    (integrate-iter (+ x dx) (+ y dy) (+ u du) (+ v dv) bounces))))
+    (integrate-iter x0 y0 u0 v0 bounces)))
+
+;TESTS CASES
+
+;(get-distance-with-bounces 2 30 30 0)
+;Value: 56.35087546125249
+
+;(get-distance-with-bounces 2 30 30 1)
+;Value: 66.01213819489284
+
+;(get-distance-with-bounces 2 30 30 2)
+;Value: 68.31207457098878
+
+;(get-distance-with-bounces 2 30 30 3)
+;Value: 68.91042211065657
+
+;(get-distance-with-bounces 2 30 30 4)
+;Value: 69.07949902113879
+
+;(get-distance-with-bounces 2 30 30 5)
+;Value: 69.13176370778372
+
+
+;; Problem 9
+
+;; Already solved in code for Problem 8
+
+
+
+
+
