@@ -1,0 +1,70 @@
+a)
+
+balance = 100
+Peter: (set! balance (+ balance 10))
+balance = 110
+Paul:  (set! balance (- balance 20))
+balance = 90
+Mary:  (set! balance (- balance (/ balance 2))) 
+balance = 45
+
+balance = 100
+Peter: (set! balance (+ balance 10))
+balance = 110
+Mary:  (set! balance (- balance (/ balance 2))) 
+balance = 55
+Paul:  (set! balance (- balance 20))
+balance = 35
+
+balance = 100
+Mary:  (set! balance (- balance (/ balance 2))) 
+balance = 50
+Peter: (set! balance (+ balance 10))
+balance = 60
+Paul:  (set! balance (- balance 20))
+balance = 40
+
+balance = 100
+Mary:  (set! balance (- balance (/ balance 2))) 
+balance = 50
+Paul:  (set! balance (- balance 20))
+balance = 30
+Peter: (set! balance (+ balance 10))
+balance = 40
+
+balance = 100
+Paul:  (set! balance (- balance 20))
+balance = 80
+Mary:  (set! balance (- balance (/ balance 2))) 
+balance = 40
+Peter: (set! balance (+ balance 10))
+balance = 50
+
+balance = 100
+Paul:  (set! balance (- balance 20))
+balance = 80
+Peter: (set! balance (+ balance 10))
+balance = 90
+Mary:  (set! balance (- balance (/ balance 2))) 
+balance = 45
+
+b)
+
+balance = 100
+(- balance 20) => (- 100 20) => balance = 80
+(+ balance 10) => (+ 100 10) => balance = 110
+(- balance (/ balance 2)) => (- 100 (/ 100 2)) => balance = 50
+
+If all execute concurrently, balance may end up with any of the above 3 values.
+
+Here a concurrent execution with some crazy shifting in time.
+
+(- balance 20) => (- 100 20) => balance = 80
+                  (+ balance 10) => (+ 80 10) => balance = 90
+                                    (- 110 (/ 80 2)) => (- 110 40) => balance = 70
+
+
+(+ balance 10) => (+ 100 10) => balance = 90
+                                (- balance 20) => (- 90 20) => balance = 70
+(- balance (/ 100 2))        => (- 90 40) => balance = 50
+
