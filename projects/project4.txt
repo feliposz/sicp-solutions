@@ -1,0 +1,461 @@
+Warmup 1
+--------
+
+(ask me 'location) returns a place object.
+
+place class accepts:
+
+exits
+exit-towards
+add-exit
+name
+install
+destroy
+things
+have-thing?
+add-thing
+del-thing
+is-a
+type
+methods
+
+Warmup 2
+--------
+   +--------has-many--------+
+   |                        |
+   |           root-object  |
+   |           |         |  |
+   |  named-object      container
+   |  |      | |         |  |
+   v  |      | |         |  |
+   thing--+  | +-------+ |  |
+      |   |  |         | |  |
+      |   +--|-has---+ | |  |
+      |      |       | | |  |
+      |      |       v | |  |
+mobile-thing-|-has-->place<-|--+
+  |   |      |       ^   |  |  |
+  |   |      |       |   |  | has
+  |   |      | +-----+   |  |  |
+  |   |      | |         |  |  |
+  |   |      | |    has  |  |  |
+  |   |      exit<--many-+  |  |
+  |   |                     |  |
+  |   |   +-----------------+  |
+  |   |   |                    |
+  |   person-------------------+
+  |     |
+  |   autonomous-person
+  |   |      |     |
+  |   avatar troll hall-monitor
+  |
+spell
+
+
+  
+
+Computer Exercise 1:
+
+
+========= Displaying the THING part of the avatar:
+
+(show me)
+INSTANCE (instance #[compound-procedure 19 handler])
+ TYPE: (avatar person mobile-thing thing named-object root container)
+ HANDLER: #[compound-procedure 19 handler]
+ TYPE: avatar
+(methods (look-around #[compound-procedure 43])
+         (go #[compound-procedure 42])
+         (die #[compound-procedure 41]))
+  Parent frame: #[environment 44]
+  person-part:  #[compound-procedure 45 handler]
+    Parent frame: global-environment
+    self:         (instance #[compound-procedure 19 handler])
+    name:         felipo
+    birthplace:   (instance #[compound-procedure 17 handler])
+;Value: instance
+
+(show #@45)
+ HANDLER: #[compound-procedure 45 handler]
+ TYPE: person
+(methods (strength #[compound-procedure 85])
+         (health #[compound-procedure 84])
+         (say #[compound-procedure 83])
+         (have-fit #[compound-procedure 82])
+         (people-around #[compound-procedure 81])
+         ...)
+  Parent frame:      #[environment 86]
+  mobile-thing-part: #[compound-procedure 87 handler]
+  container-part:    #[compound-procedure 88 handler]
+  health:            3
+  strength:          1
+    Parent frame: global-environment
+    self:         (instance #[compound-procedure 19 handler])
+    name:         felipo
+    birthplace:   (instance #[compound-procedure 17 handler])
+;Value: handler
+
+(show #@87)
+ HANDLER: #[compound-procedure 87 handler]
+ TYPE: mobile-thing
+(methods (location #[compound-procedure 93])
+         (change-location #[compound-procedure 92])
+         (enter-room #[compound-procedure 91])
+         (leave-room #[compound-procedure 90])
+         (creation-site #[compound-procedure 89]))
+  Parent frame: #[environment 94]
+  thing-part:   #[compound-procedure 95 handler]
+    Parent frame: global-environment
+    self:         (instance #[compound-procedure 19 handler])
+    name:         felipo
+    location:     (instance #[compound-procedure 53 handler])
+;Value: handler
+
+(show #@95)
+ HANDLER: #[compound-procedure 95 handler]
+ TYPE: thing
+(methods (install #[compound-procedure 99])
+         (location #[compound-procedure 98])
+         (destroy #[compound-procedure 97])
+         (emit #[compound-procedure 96]))
+  Parent frame: #[environment 100]
+  named-part:   #[compound-procedure 101 handler]
+    Parent frame: global-environment
+    self:         (instance #[compound-procedure 19 handler])
+    name:         felipo
+    location:     (instance #[compound-procedure 17 handler])
+;Value: handler
+
+========== Displaying the container part of the avatar's location
+
+(show (ask me 'location))
+INSTANCE (instance #[compound-procedure 53 handler])
+ TYPE: (place container root named-object)
+ HANDLER: #[compound-procedure 53 handler]
+ TYPE: place
+(methods (exits #[compound-procedure 56])
+         (exit-towards #[compound-procedure 55])
+         (add-exit #[compound-procedure 54]))
+  Parent frame:   #[environment 57]
+  named-part:     #[compound-procedure 58 handler]
+  container-part: #[compound-procedure 59 handler]
+  exits:          ((instance #[compound-procedure 64 handler])
+                 (instance #[compound-procedure 63 handler])
+                 (instance #[compound-procedure 62 handler])
+                 (instance #[compound-procedure 61 handler])
+                 (instance #[compound-procedure 60 handler]))
+    Parent frame: global-environment
+    self:         (instance #[compound-procedure 53 handler])
+    name:         lobby-10
+;Value: instance
+
+(show #@59)
+ HANDLER: #[compound-procedure 59 handler]
+ TYPE: container
+(methods (things #[compound-procedure 107])
+         (have-thing? #[compound-procedure 106])
+         (add-thing #[compound-procedure 105])
+         (del-thing #[compound-procedure 104]))
+  Parent frame: #[environment 108]
+  root-part:    #[compound-procedure 109 handler]
+  things:       ((instance #[compound-procedure 46 handler])
+               (instance #[compound-procedure 40 handler])
+               (instance #[compound-procedure 111 handler])
+               (instance #[compound-procedure 110 handler])
+               (instance #[compound-procedure 19 handler]))
+    Parent frame: global-environment
+    self:         (instance #[compound-procedure 53 handler])
+;Value: handler
+
+======== Self
+
+Self always points to the highest-level object (in this case the avatar itself).
+
+===============================================================
+
+Computer Exercise 2:
+
+Inside person / make-handler / make-methods:
+
+      ; Computer Exercise 2
+      'HAS-A
+      (lambda (type)
+	(let ((things (ask self 'THINGS)))
+	  (filter (lambda (thing)
+		    (ask thing 'IS-A type))
+		  things)))
+
+      'HAS-A-THING-NAMED
+      (lambda (name)
+	(let ((things (ask self 'THINGS)))
+	  (filter (lambda (thing)
+		    (eq? name (ask thing 'NAME)))
+		  things)))
+
+
+Tests:
+
+(setup 'felipo)
+;Value: ready
+
+(ask me 'look-around)
+
+You are in grendels-den 
+You are not holding anything. 
+You see stuff in the room: slug-spell 
+There are no other people around you. 
+The exits are in directions: up 
+;Value: ok
+
+(ask me 'take (thing-named 'slug-spell))
+
+At grendels-den felipo says -- I take slug-spell from grendels-den 
+;Value 123: (instance #[compound-procedure 124 handler])
+
+(ask me 'has-a 'spell)
+;Value 125: ((instance #[compound-procedure 124 handler]))
+
+(ask me 'has-a-thing-named 'slug-spell)
+;Value 126: ((instance #[compound-procedure 124 handler]))
+
+===============================================================
+
+Computer Exercise 3:
+
+Inside avatar / make-handler / make-methods:
+
+      'FEEL-THE-FORCE
+      (lambda ()
+	(for-each (lambda (p)
+		    (display (ask p 'name))
+		    (display " is at ")
+		    (display (ask (ask p 'location) 'name))
+		    (newline))
+		  (all-people)))
+
+
+Tests:
+
+(setup 'felipo)
+;Value: ready
+
+(ask me 'FEEL-THE-FORCE)
+grendel is at barker-library
+course-6-frosh is at eecs-ug-office
+felipo is at 34-301
+lambda-man is at 6001-lab
+ben-bitdiddle is at 6001-lab
+registrar is at great-court
+alyssa-hacker is at great-court
+mr-bigglesworth is at bexley
+dr-evil is at graduation-stage
+;Unspecified return value
+
+
+
+===============================================================
+
+Computer Exercise 4:
+
+Inside person / make-handler / make-methods:
+
+      'PEOPLE-AROUND        ; other people in room...
+      (lambda ()
+	(hide-roo-bearer    ; Computer exercise 4
+	 (delq self (find-all (ask self 'LOCATION) 'PERSON))))
+
+Inside avatar / make-handler / make-methods:
+
+      'FEEL-THE-FORCE
+      (lambda ()
+	(for-each (lambda (p)
+		    (display (ask p 'name))
+		    (display " is at ")
+		    (display (ask (ask p 'location) 'name))
+		    (newline))
+		  (hide-roo-bearer (all-people)))) ; Computer Exercise 4
+
+
+;;
+;; ring-of-obfuscation
+;;
+(define (create-ring-of-obfuscation name location)
+  (create-instance ring-of-obfuscation name location))
+
+(define (ring-of-obfuscation self name location)
+  (let ((mobile-part (mobile-thing self name location)))
+    (make-handler
+     'ring-of-obfuscation
+     (make-methods)
+     mobile-part)))
+
+; hide ring-of-obfuscation bearers from the list of people passed
+(define (hide-roo-bearer people)
+  (filter (lambda (p)
+	    (null? (ask p 'has-a 'ring-of-obfuscation)))
+	  people))
+
+
+
+
+===============================================================
+
+Computer Exercise 5:
+
+;;
+;; wand
+;;
+(define (create-wand name location)
+  (create-instance wand name location))
+
+(define (wand self name location)
+  (let ((mobile-part (mobile-thing self name location)))
+    (make-handler
+     'wand
+     (make-methods
+
+      'ZAP
+      (lambda (target)
+	(let ((bearer (ask self 'location)))
+	  (cond ((not (ask bearer 'is-a 'person))
+		 (ask self 'emit '(caster must be a person)))
+		((not (ask target 'is-a 'person))
+		 (ask bearer 'emit '(target must be a person)))
+		(else
+		 (let ((spell (pick-random (ask bearer 'has-a 'spell))))
+		   (ask bearer 'emit (cons (ask bearer 'name)
+					   '(is waving a wand)))
+		   (if spell
+		       (begin
+			 (ask bearer 'say (list (ask spell 'incant)))
+			 (ask spell 'use bearer target))
+		       (ask bearer 'emit '(nothing happened)))))))
+	'magic-happens)		       
+
+      'WAVE
+      (lambda ()
+	(let ((bearer (ask self 'location)))
+	  (cond ((not (ask bearer 'is-a 'person))
+		 (ask self 'emit '(caster must be a person)))
+		(else
+		 (let ((target (pick-random (ask bearer 'people-around))))
+		   (if target
+		       (ask self 'zap target))))))
+	'magic-happens)
+
+      )
+     mobile-part)))
+
+
+Tests:
+
+felipo moves from great-court to lobby-10 
+--- the-clock Tick 4 --- 
+At lobby-10 registrar says -- Hi felipo 
+;Value: #t
+
+(ask (thing-named 'my-wand) 'zap (thing-named 'registrar))
+
+At lobby-10 felipo is waving a wand 
+At lobby-10 felipo says -- habooic katarnum 
+At lobby-10 registrar grows boils on their nose 
+;Value: message-displayed
+
+
+
+
+
+(ask (thing-named 'my-wand) 'wave)
+
+At edgerton-hall felipo is waving a wand 
+At edgerton-hall felipo says -- habooic katarnum 
+At edgerton-hall lambda-man grows boils on their nose 
+;Value: message-displayed
+
+(ask (thing-named 'my-wand) 'wave)
+4
+At edgerton-hall felipo is waving a wand 
+At edgerton-hall felipo says -- dagnabbit ekaterin 
+At edgerton-hall A slug comes out of mr-bigglesworth 's mouth. 
+;Value 215: (instance #[compound-procedure 216 handler])
+
+
+
+
+===============================================================
+
+Computer Exercise 6:
+
+; all spells exist in the chamber-of-stata.  When placing a spell
+; in the outside world, the original spell from the chamber-of stata
+; is cloned (using clone-spell; see objtypes.scm).
+; There are no entrances, exits, or people in the chamber, preventing
+;  the spells there from being stolen.
+(define (instantiate-spells)
+  (let ((chamber (create-place 'chamber-of-stata)))
+    (create-spell
+     'boil-spell
+     chamber
+     "habooic katarnum"
+     (lambda (caster target)
+       (if (ask target 'IS-A 'person)
+	   (ask target 'EMIT
+		(list (ask target 'NAME) "grows boils on their nose"))
+	   (ask caster 'SAY '(target is not a person)))))
+    (create-spell
+     'slug-spell
+     chamber
+     "dagnabbit ekaterin"
+     (lambda (caster target)
+       (if (ask target 'IS-A 'person)
+	   (begin
+	     (ask target 'EMIT (list "A slug comes out of" (ask target 'NAME) "'s mouth."))
+	     (create-mobile-thing 'slug (ask target 'LOCATION)))
+	   (ask caster 'SAY '(target is not a person)))))
+    (create-spell
+     'winds-of-doom-spell
+     chamber
+     "avadra kedavra"
+     (lambda (caster target)
+       (if (ask target 'IS-A 'person)
+	   (ask target 'SUFFER (random-number 2) caster)
+	   (ask target 'DESTROY))))
+
+    chamber))
+
+
+
+
+Tests:
+
+
+(ask me 'look-around)
+
+You are in building-13 
+You are holding: wind-of-doom-spell my-wand 
+You see stuff in the room: wind-of-doom-spell 
+You see other people: grendel 
+The exits are in directions: north south 
+;Value: ok
+
+(ask (thing-named 'my-wand) 'wave)
+
+At building-13 felipo is waving a wand 
+At building-13 felipo says -- avadra kedavra 
+At building-13 grendel says -- Ouch! 2 hits is more than I want! 
+;Value: magic-happens
+
+(ask (thing-named 'my-wand) 'wave)
+
+At building-13 felipo is waving a wand 
+At building-13 felipo says -- avadra kedavra 
+;Value: magic-happens
+
+(ask (thing-named 'my-wand) 'wave)
+
+At building-13 felipo is waving a wand 
+At building-13 felipo says -- avadra kedavra 
+At building-13 grendel says -- Ouch! 1 hits is more than I want! 
+At building-13 grendel says -- SHREEEEK!  I, uh, suddenly feel very faint... 
+An earth-shattering, soul-piercing scream is heard... 
+;Value: magic-happens
