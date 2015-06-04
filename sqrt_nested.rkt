@@ -1,0 +1,17 @@
+#lang racket
+(define (square x)
+  (* x x))
+(define (average a b)
+  (/ (+ a b) 2))
+(define (sqrt x)
+    (define (try guess)
+      (if (good-enough? guess)
+          guess
+          (try (improve guess))))
+    (define (improve guess)
+      (average guess (/ x guess)))
+    (define (good-enough? guess)
+      (< (abs (- (square guess) x))
+         .001))
+    (try 1))
+(sqrt 2)
